@@ -10,6 +10,9 @@
   "stack": "heroku-16",
   "buildpacks": [
     {
+      "url": "https://github.com/heroku/heroku-buildpack-chromedriver"
+    },
+    {
       "url": "https://github.com/heroku/heroku-buildpack-google-chrome"
     },
     {
