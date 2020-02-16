@@ -1,5 +1,4 @@
-require "chromedriver-helper"
-require "watir"
+require 'webdrivers'
 require "fileutils"
 
 class Runner < Thor
@@ -41,7 +40,20 @@ class Runner < Thor
   private
 
   def new_browser(downloads: false)
-    options = Selenium::WebDriver::Chrome::Options.new
+    downloads_directory = "/tmp"
+    capabilities = {
+        args: %w(disable-infobars headless no-sandbox disable-dev-shm-usage),
+        detach: true,
+        prefs: {
+            download: {
+                default_directory: File.join(Dir.pwd, downloads_directory)
+            }
+        }
+    }
+    options = Selenium::WebDriver::Chrome::Options.new(options: capabilities)
+    options.add_argument('--headless')
+    options.add_argument('headless')
+
 
     # make a directory for chrome if it doesn't already exist
     chrome_dir = File.join Dir.pwd, %w(tmp chrome)
@@ -64,7 +76,10 @@ class Runner < Thor
     options.add_argument "--disable-gpu"
 
     # make the browser
-    browser = Watir::Browser.new :chrome, options: options
+    # browser = Watir::Browser.new :chrome, options: options
+    client = Selenium::WebDriver::Remote::Http::Default.new(read_timeout: 120)
+    browser = Selenium::WebDriver.for :chrome, options: options, http_client: client
+
 
     # setup downloading options
     if downloads
