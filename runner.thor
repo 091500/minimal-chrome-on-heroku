@@ -26,7 +26,7 @@ class Runner < Thor
     browser = new_browser
 
     url = PAGES.sample
-    browser.goto url
+    browser.get url
 
     title = browser.title
 
@@ -40,20 +40,8 @@ class Runner < Thor
   private
 
   def new_browser(downloads: false)
-    downloads_directory = "/tmp"
-    capabilities = {
-        args: %w(disable-infobars headless no-sandbox disable-dev-shm-usage),
-        detach: true,
-        prefs: {
-            download: {
-                default_directory: File.join(Dir.pwd, downloads_directory)
-            }
-        }
-    }
-    options = Selenium::WebDriver::Chrome::Options.new(options: capabilities)
-    options.add_argument('--headless')
-    options.add_argument('headless')
-
+    Webdrivers.logger.level = :DEBUG
+    Selenium::WebDriver::Chrome.path = ENV["GOOGLE_CHROME_SHIM"]
 
     # make a directory for chrome if it doesn't already exist
     chrome_dir = File.join Dir.pwd, %w(tmp chrome)
@@ -62,38 +50,30 @@ class Runner < Thor
     # add the option for user-data-dir
     options.add_argument user_data_dir
 
-    # let Selenium know where to look for chrome if we have a hint from
-    # heroku. chromedriver-helper & chrome seem to work out of the box on osx,
-    # but not on heroku.
-    if chrome_bin = ENV["GOOGLE_CHROME_SHIM"]
-      options.add_argument "--no-sandbox"
-      options.binary = chrome_bin
-    end
-
-    # headless!
+    options = Selenium::WebDriver::Chrome::Options.new
     options.add_argument "--window-size=1200x600"
     options.add_argument "--headless"
     options.add_argument "--disable-gpu"
+    options.add_argument "--no-sandbox"
 
     # make the browser
     # browser = Watir::Browser.new :chrome, options: options
-    client = Selenium::WebDriver::Remote::Http::Default.new(read_timeout: 120)
-    browser = Selenium::WebDriver.for :chrome, options: options, http_client: client
+    browser = Selenium::WebDriver.for :chrome, options: options
 
+    # # setup downloading options
+    # if downloads
+    #   # make download storage directory
+    #   downloads_dir = File.join Dir.pwd, %w(tmp downloads)
+    #   FileUtils.mkdir_p downloads_dir
+    #
+    #   # tell the bridge to use downloads
+    #   bridge = browser.driver.send :bridge
+    #   path = "/session/#{bridge.session_id}/chromium/send_command"
+    #   params = { behavior: "allow", downloadPath: downloads_dir }
+    #   bridge.http.call(:post, path, cmd: "Page.setDownloadBehavior",
+    #                                 params: params)
+    # end
 
-    # setup downloading options
-    if downloads
-      # make download storage directory
-      downloads_dir = File.join Dir.pwd, %w(tmp downloads)
-      FileUtils.mkdir_p downloads_dir
-
-      # tell the bridge to use downloads
-      bridge = browser.driver.send :bridge
-      path = "/session/#{bridge.session_id}/chromium/send_command"
-      params = { behavior: "allow", downloadPath: downloads_dir }
-      bridge.http.call(:post, path, cmd: "Page.setDownloadBehavior",
-                                    params: params)
-    end
     browser
   end
 end

@@ -3,4 +3,3 @@ ruby File.read(".ruby-version").strip
 
 gem "thor"
 gem "webdrivers"
-gem "rails"
